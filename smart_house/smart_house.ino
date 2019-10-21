@@ -5,8 +5,7 @@ const int PIN_a=12;
 const int PIN_b=13;
 const int PIN_c=11;
 const int PIN_d=8;
-char command[10];
-int commandNumber;
+int incomingCommandByte = 0; // for incoming serial data
 
 
 
@@ -22,53 +21,66 @@ void setup() {
    pinMode(PIN_d, OUTPUT);
    
    
+   
 
 }
 
 void loop() {
-  
-  
-  commandNumber = Serial.read();
-  
-  
-
-  if(commandNumber  == 49){
-    Serial.println(commandNumber);
+   while (Serial.available() > 0){
  
+  incomingCommandByte = Serial.read() - '0';
   
-   digitalWrite(PIN_a, HIGH);
+    if( incomingCommandByte == 1){
+    indoorLightsON();
+    incomingCommandByte = 0;
+    }
+     else if( incomingCommandByte == 2){
+    //indoorLightsOFF();
+    incomingCommandByte = 0;
+    }
+    else if( incomingCommandByte == 3){
+    //outdoorLightsON();
+    incomingCommandByte = 0;
+    }
+    else if( incomingCommandByte == 4){
+    
+    //outdoorLightsON();
+    incomingCommandByte = 0;
+    }
+    else if( incomingCommandByte == 5){
+
+    incomingCommandByte = 0;
+    }
+}
+}
+ 
+ void indoorLightsON(){
+  //method to turn on  indoor lights
+
+  digitalWrite(PIN_a, HIGH);
    digitalWrite(PIN_b, HIGH);
    digitalWrite(PIN_c, LOW);
    digitalWrite(PIN_d, LOW);
    Serial.println("indoor Light on");
-   commandNumber =0;
-}
-else if(commandNumber == 1){
-Serial.println("indoor light off");}
    
-
-}
- 
-void indoorLightsON(){
-  //method to turn on  indoor lights
   }
-
+}
   
  
-void indoorLightsOFF(){
+ void indoorLightsOFF(){
   //method to turn off  indoor lights
   }
 
 
-void outdoorLightsON(){
+ void outdoorLightsON(){
   //method to turn on outdoor lights
   }
   
-void outdoorLightsOFF(){
+ void outdoorLightsOFF(){
   //method to turn on outdoor lights
   }
   
-void radiatorON(){
+ void radiatorON(){
 //  method to turn on radiator
   }
 
@@ -78,7 +90,7 @@ void radiatorOFF(){
   }
 
   
-double getInternalTemperature(){
+ double getInternalTemperature(){
   //method to get internal temperature
   }
   
@@ -117,10 +129,10 @@ void waterLeakegeOFF(){
   }
   
 
-void fireAlarmON(){
+ void fireAlarmON(){
   //method to turn  fire alarm
   }
   
-void fireAlarmOFF(){
+ void fireAlarmOFF(){
   //method to turn off fire alarm}
 }
