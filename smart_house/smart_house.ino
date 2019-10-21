@@ -60,9 +60,11 @@ void loop() {
    reading_fire_alarm = digitalRead(PIN_fire_alarm);
    if(reading_fire_alarm == HIGH) {
   timer2ON();
+  fireAlarmON();
     }
     if(reading_fire_alarm == LOW) {
   timer2OFF();
+  fireAlarmOFF();
       }   
 
    //Switch for window
@@ -237,10 +239,21 @@ void waterLeakegeOFF(){
   }
   
 
- void fireAlarmON(){
-  //method to turn  fire alarm
+  void fireAlarmON(){
+  //method to turn on fire alarm sound
+  digitalWrite(PIN_a ,HIGH);
+  digitalWrite(PIN_b ,LOW);
+  digitalWrite(PIN_c ,LOW);
+  digitalWrite(PIN_d ,LOW);
+  Serial.println("Fire Alarm is ON");
   }
   
- void fireAlarmOFF(){
-  //method to turn off fire alarm}
-}
+   void fireAlarmOFF(){
+  //method to turn off fire alarm sound
+ 
+  digitalWrite(PIN_a ,LOW);
+  digitalWrite(PIN_b ,LOW);
+  digitalWrite(PIN_c ,LOW);
+  digitalWrite(PIN_d ,LOW);
+  Serial.println("Fire Alarm is OFF");
+  }
