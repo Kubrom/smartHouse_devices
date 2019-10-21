@@ -101,11 +101,23 @@ void loop() {
   
  void radiatorON(){
 //  method to turn on radiator
+
+   digitalWrite(PIN_a, LOW);
+   digitalWrite(PIN_b, HIGH);
+   digitalWrite(PIN_c, LOW);
+   digitalWrite(PIN_d, HIGH);
+   Serial.println("radiator inside On");
   }
 
   
 void radiatorOFF(){
   //method to turn off radiator
+
+   digitalWrite(PIN_a, HIGH);
+   digitalWrite(PIN_b, HIGH);
+   digitalWrite(PIN_c, LOW);
+   digitalWrite(PIN_d, HIGH);
+   Serial.println("radiator inside On");
   }
 
   
