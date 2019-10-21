@@ -57,27 +57,46 @@ void loop() {
  void indoorLightsON(){
   //method to turn on  indoor lights
 
-  digitalWrite(PIN_a, HIGH);
-   digitalWrite(PIN_b, HIGH);
-   digitalWrite(PIN_c, LOW);
+   digitalWrite(PIN_a, LOW);
+   digitalWrite(PIN_b, LOW);
+   digitalWrite(PIN_c, HIGH);
    digitalWrite(PIN_d, LOW);
    Serial.println("indoor Light on");
    
   }
-}
+
   
  
  void indoorLightsOFF(){
-  //method to turn off  indoor lights
+//method to turn off  indoor lights
+
+   digitalWrite(PIN_a, HIGH);
+   digitalWrite(PIN_b, LOW);
+   digitalWrite(PIN_c, HIGH);
+   digitalWrite(PIN_d, LOW);
+   Serial.println("indoor Light on");
+  
   }
 
 
  void outdoorLightsON(){
   //method to turn on outdoor lights
+
+   digitalWrite(PIN_a, LOW);
+   digitalWrite(PIN_b, HIGH);
+   digitalWrite(PIN_c, HIGH);
+   digitalWrite(PIN_d, HIGH);
+   Serial.println("indoor Light on");
   }
   
  void outdoorLightsOFF(){
   //method to turn on outdoor lights
+  
+   digitalWrite(PIN_a, HIGH);
+   digitalWrite(PIN_b, HIGH);
+   digitalWrite(PIN_c, HIGH);
+   digitalWrite(PIN_d, HIGH);
+   Serial.println("indoor Light on");
   }
   
  void radiatorON(){
