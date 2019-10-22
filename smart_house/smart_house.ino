@@ -11,10 +11,10 @@ const int PIN_fire_alarm = 2;
 const int PIN_window = 6;
 
 int incomingCommandByte = 0; // for incoming serial data
-int reading_water_leakage; // used to read switch values
-int reading_stove; // used to read switch values
-int reading_fire_alarm; // used to read switch values
-int reading_window; // used to read switch values
+int waterLeakage_state; // used to read switch values
+int stove_state; // used to read switch values
+int fireAlarm_state; // used to read switch values
+int window_state; // used to read switch values
 
 
 
@@ -25,12 +25,17 @@ int reading_window; // used to read switch values
 void setup() {
   // put your setup code here, to run once:
   Serial.begin(9600);
-  Serial.println("Welcome to the Smart house");
    pinMode(PIN_a, OUTPUT);
    pinMode(PIN_b, OUTPUT);
    pinMode(PIN_c, OUTPUT);
    pinMode(PIN_d, OUTPUT);
    pinMode(PIN_water_leakage, INPUT);
+   pinMode(PIN_stove, INPUT);
+   pinMode(PIN_fire_alarm, INPUT);
+   pinMode(PIN_window, INPUT);
+   timer1OFF();
+   timer2OFF();
+   Serial.println("Welcome to the Smart house");
    
    
    
@@ -38,47 +43,26 @@ void setup() {
 }
 
 void loop() {
-  //Switch water leakage
-   reading_water_leakage = digitalRead(PIN_water_leakage);
-   if(reading_water_leakage == HIGH) {
-   timer2ON();
-    }
-    if(reading_water_leakage == LOW) {
-   timer2OFF();
-      }
+  
+  readFromSwitchPanel(); //method to read  values from switch panel
 
-//Switch for stove
-    reading_stove = digitalRead(PIN_stove);
-   if(reading_stove == HIGH) {
+  if(stove_state == HIGH){
+    // send message to server that stove is on.
+    }
+  
+ if(stove_state == HIGH || waterLeakage_state == HIGH || fireAlarm_state == HIGH || window_state == HIGH) {
   timer2ON();
+  delay(500);
     }
-    if(reading_stove == LOW) {
+ if(stove_state == LOW && waterLeakage_state == LOW && fireAlarm_state == LOW && window_state == LOW) {
   timer2OFF();
+  delay(500);
       }   
+      
 
-   //Switch for fire alarm
-   reading_fire_alarm = digitalRead(PIN_fire_alarm);
-   if(reading_fire_alarm == HIGH) {
-  timer2ON();
-  fireAlarmON();
-    }
-    if(reading_fire_alarm == LOW) {
-  timer2OFF();
-  fireAlarmOFF();
-      }   
+  
 
-   //Switch for window
-
-    reading_window = digitalRead(PIN_window);
-   if(reading_window == HIGH) {
-  timer2ON();
-    }
-    if(reading_window == LOW) {
-  timer2OFF();
-      }   
-
-
-      //--------------
+      
    while (Serial.available() > 0){
   incomingCommandByte = Serial.read() - '0';
   
@@ -115,69 +99,69 @@ void loop() {
 }
  
  void indoorLightsON(){
-  //method to turn on  indoor lights
+  //method to turn on  indoor light 0010
 
    digitalWrite(PIN_a, LOW);
    digitalWrite(PIN_b, LOW);
    digitalWrite(PIN_c, HIGH);
    digitalWrite(PIN_d, LOW);
-   Serial.println("indoor Light on");
+ Serial.write("indoor light on");
    
   }
 
   
  
  void indoorLightsOFF(){
-//method to turn off  indoor lights
+//method to turn off  indoor lights 1010
 
    digitalWrite(PIN_a, HIGH);
    digitalWrite(PIN_b, LOW);
    digitalWrite(PIN_c, HIGH);
    digitalWrite(PIN_d, LOW);
-   Serial.println("indoor Light off");
+   
   
   }
 
 
  void outdoorLightsON(){
-  //method to turn on outdoor lights
+  //method to turn on outdoor lights 0111
 
    digitalWrite(PIN_a, LOW);
    digitalWrite(PIN_b, HIGH);
    digitalWrite(PIN_c, HIGH);
    digitalWrite(PIN_d, HIGH);
-   Serial.println("outdoor Light on");
+   
   }
   
  void outdoorLightsOFF(){
-  //method to turn on outdoor lights
+  //method to turn on outdoor lights 1111
   
    digitalWrite(PIN_a, HIGH);
    digitalWrite(PIN_b, HIGH);
    digitalWrite(PIN_c, HIGH);
    digitalWrite(PIN_d, HIGH);
-   Serial.println("outdoor Light off");
+ 
   }
   
  void radiatorON(){
-//  method to turn on radiator
+//  method to turn on radiator 0101
 
    digitalWrite(PIN_a, LOW);
    digitalWrite(PIN_b, HIGH);
    digitalWrite(PIN_c, LOW);
    digitalWrite(PIN_d, HIGH);
-   Serial.println("radiator inside On");
+  
   }
 
   
 void radiatorOFF(){
-  //method to turn off radiator
+  //method to turn off radiator 1101
 
    digitalWrite(PIN_a, HIGH);
    digitalWrite(PIN_b, HIGH);
    digitalWrite(PIN_c, LOW);
    digitalWrite(PIN_d, HIGH);
-   Serial.println("radiator inside On");
+  
   }
 
   
@@ -204,22 +188,40 @@ void windowOPEN(){
   //method to open the windows
 }
 
+void timer1ON(){
+  //method to turn on timer 2 0100
+   digitalWrite(PIN_a, LOW);
+   digitalWrite(PIN_b, HIGH);
+   digitalWrite(PIN_c, LOW);
+   digitalWrite(PIN_d, LOW);
+  
+}
+
+void timer1OFF(){
+  //method to turn off the timer (2) 1100
+   digitalWrite(PIN_a, HIGH);
+   digitalWrite(PIN_b, HIGH);
+   digitalWrite(PIN_c, LOW);
+   digitalWrite(PIN_d, LOW);
+   
+}
+
 void timer2ON(){
-  //method to turn on timer 2
+  //method to turn on timer 2 0001
    digitalWrite(PIN_a, LOW);
    digitalWrite(PIN_b, LOW);
    digitalWrite(PIN_c, LOW);
    digitalWrite(PIN_d, HIGH);
-   Serial.println("timer 2 Light On");
+  
 }
 
 void timer2OFF(){
-  //method to turn off the timer (2)
+  //method to turn off the timer (2) 1001
    digitalWrite(PIN_a, HIGH);
    digitalWrite(PIN_b, LOW);
    digitalWrite(PIN_c, LOW);
    digitalWrite(PIN_d, HIGH);
-   Serial.println("timer 2 Light Off");
+  
 }
 
 
@@ -240,20 +242,39 @@ void waterLeakegeOFF(){
   
 
   void fireAlarmON(){
-  //method to turn on fire alarm sound
+  //method to turn on fire alarm sound 1000
   digitalWrite(PIN_a ,HIGH);
   digitalWrite(PIN_b ,LOW);
   digitalWrite(PIN_c ,LOW);
   digitalWrite(PIN_d ,LOW);
-  Serial.println("Fire Alarm is ON");
+ 
   }
   
    void fireAlarmOFF(){
-  //method to turn off fire alarm sound
+  //method to turn off fire alarm sound 0000
  
   digitalWrite(PIN_a ,LOW);
   digitalWrite(PIN_b ,LOW);
   digitalWrite(PIN_c ,LOW);
   digitalWrite(PIN_d ,LOW);
-  Serial.println("Fire Alarm is OFF");
+ 
   }
+
+  void readFromSwitchPanel(){
+  waterLeakage_state = digitalRead(PIN_water_leakage);
+  delay(100);
+  stove_state = digitalRead(PIN_stove);
+  delay(100);
+  fireAlarm_state = digitalRead(PIN_fire_alarm);
+  delay(100);
+  window_state = digitalRead(PIN_window);
+  delay(100);
+    }
+    void getWaterLeakageStatus(){
+      if(waterLeakage_state == HIGH){
+        //send message to server to tell there is water leakage
+        }
+        else{
+          //
+          }
+      }
