@@ -1,4 +1,15 @@
-
+/*
+ * Here is a list of all the commands according  to the command protocol
+ * 1: indoor Lights ON
+ * 2: indoor Lights OFF
+ * 3: outdoor Lights ON
+ * 4: outdoor Lights OFF
+ * 5:
+ * 6:
+ * 7:
+ * 8:
+ * 9:
+ */
 //list of all needed variables
 
 const int PIN_a=12;
@@ -10,11 +21,33 @@ const int PIN_stove = 5; //physical switch that triggers stove.
 const int PIN_fire_alarm = 2; //physical switch that trigger fire alarm.
 const int PIN_window = 6; // physical switch that trigger window.
 
-int incomingCommandByte = 0; // for incoming serial data
+unsigned int incomingCommandByte = 0; // for incoming serial data
 int waterLeakage_state; // used to read  waterLeakage switch values
 int stove_state; // used to read stove switch values
 int fireAlarm_state; // used to read fireAlarm switch values
 int window_state; // used to read window switch values
+
+//list of all the prototypes of the functions created
+
+double getInternalTemperature();
+double getExternalTemperature();
+void sendWaterLeakageState();
+void smartHousePanel();
+void sendWindowState();
+void sendStoveState();
+void sendFireAlarmState();
+void indoorLightsON();
+void indoorLightsOFF();
+void outdoorLightsON();
+void outdoorLightsOFF();
+void radiatorON();
+void radiatorOFF();
+void timer1ON();
+void timer1OFF();
+void timer2ON();
+void timer2OFF();
+void fireAlarmON();
+void fireAlarmOFF();
 
 
 void setup() {
@@ -142,8 +175,6 @@ double getExternalTemperature(){
  
    
   }
-
-  
  
  void indoorLightsOFF(){
 //method to turn off  indoor lights 1010
