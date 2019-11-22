@@ -21,6 +21,13 @@ const int PIN_stove = 5; //physical switch that triggers stove.
 const int PIN_fire_alarm = 2; //physical switch that trigger fire alarm.
 const int PIN_window = 6; // physical switch that trigger window.
 
+const int PIN_tempIn = A1;
+const int PIN_tempOut = A2;
+
+//float tempC;
+//float vout;
+
+
 unsigned int incomingCommandByte = 0; // for incoming serial data
 int waterLeakage_state; // used to read  waterLeakage switch values
 int stove_state; // used to read stove switch values
@@ -61,9 +68,12 @@ void setup() {
    pinMode(PIN_stove, INPUT);
    pinMode(PIN_fire_alarm, INPUT);
    pinMode(PIN_window, INPUT);
+   pinMode(PIN_tempIn, INPUT);
+   pinMode(PIN_tempOut, INPUT);
    timer1OFF();
    timer2OFF();
    Serial.println("Welcome to the Smart house");
+  
   
 }
 
@@ -100,15 +110,15 @@ void loop() {
     incomingCommandByte = 0;
     }
     else if( incomingCommandByte == 7){
-    
+    getInternalTemperature();
     incomingCommandByte = 0;
     }
     else if( incomingCommandByte == 8){
-    
+    getExternalTemperature();
     incomingCommandByte = 0;
     }
     else if( incomingCommandByte == 9){
-    
+    tempTest();
     incomingCommandByte = 0;
     }
 }
@@ -116,10 +126,35 @@ void loop() {
 
  double getInternalTemperature(){
   //method to get internal temperature
+  float temp = analogRead(PIN_tempIn);    //Read the analog pin
+  temp = temp * 0.48828125;   // convert output (mv) to readable celcius
+  Serial.print("Indoor Temperature: ");
+  Serial.print(temp);
+  Serial.println("C");  //print the temperature status
+  delay(1000);
   }
   
-double getExternalTemperature(){
+ double getExternalTemperature(){
  // method to get external temperature 
+ float temp = analogRead(PIN_tempOut);    //Read the analog pin
+ temp = temp * 0.48828125;   // convert output (mv) to readable celcius
+ Serial.print("Outdoor Temperature: ");
+ Serial.print(temp);
+ Serial.println("C");  //print the temperature status
+ delay(1000);
+ }
+
+ float tempTest(){
+  float tempc;
+  float vout;
+  vout=analogRead(PIN_tempIn);
+  vout=(vout*500)/1023;
+  tempc=vout;
+  Serial.print("Indoor Temperature:" );
+  Serial.print(tempc);
+  Serial.print("");
+  delay(500); 
+  
  }
 
 
