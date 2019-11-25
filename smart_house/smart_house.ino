@@ -207,6 +207,8 @@ void loop() {
    digitalWrite(PIN_b, LOW);
    digitalWrite(PIN_c, HIGH);
    digitalWrite(PIN_d, LOW);
+   sendResponseToServer();
+   
  
    
   }
@@ -339,6 +341,9 @@ void timer2OFF(){
   delay(100);
       } 
     }
+    int sendResponseToServer( ){
+        return incomingCommandByte;
+        }
 
     
   
