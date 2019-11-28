@@ -4,11 +4,13 @@
  * 2: indoor Lights OFF
  * 3: outdoor Lights ON
  * 4: outdoor Lights OFF
- * 5:
- * 6:
- * 7:
- * 8:
- * 9:
+ * 5: radiator ON
+ * 6: radiator OFF
+ * 7: internal temperature
+ * 8: external temperature
+ * 9: electricity consumption
+ * 10: fan ON
+ * 11: fan OFF
  */
 //list of all needed variables
 
@@ -20,16 +22,12 @@ const int PIN_water_leakage = 4; // physical switch that triggers water leakage.
 const int PIN_stove = 5; //physical switch that triggers stove.
 const int PIN_fire_alarm = 2; //physical switch that trigger fire alarm.
 const int PIN_window = 6; // physical switch that trigger window.
-const int PIN_housebreaking_alarm = 3;
-const int PIN_elCon = A0;
+const int PIN_housebreaking_alarm = 3; //Housebreaking Alarm
+const int PIN_elCon = A0; // Electricity Consumption
+const int PIN_fan = 10; // Pin for turning on and off the fan
 
 const int PIN_tempIn = A1; // Indoor temperature pin.
 const int PIN_tempOut = PB1; // Outdoor temperature pin.
-
-
-//float tempC;
-//float vout;
-
 
 unsigned int incomingCommandByte = 0; // for incoming serial data
 int waterLeakage_state; // used to read  waterLeakage switch values
@@ -52,6 +50,9 @@ void outdoorLightsON();
 void outdoorLightsOFF();
 void radiatorON();
 void radiatorOFF();
+void fanON();
+void fanOFF();
+void electricityConsumption();
 void timer1ON();
 void timer1OFF();
 void timer2ON();
@@ -76,7 +77,9 @@ void setup() {
    pinMode(PIN_housebreaking_alarm, INPUT);
    attachInterrupt(digitalPinToInterrupt(PIN_housebreaking_alarm), houseBreakingAlarm, LOW);
    pinMode(PIN_elCon, INPUT);
-   //analogReference(INTERNAL);
+   
+   pinMode(PIN_fan, OUTPUT);   
+   analogWrite(PIN_fan, 0);
 
    timer1OFF();
    timer2OFF();
@@ -129,10 +132,32 @@ void loop() {
     electricityConsumption();
     incomingCommandByte = 0;
     }
+    else if( incomingCommandByte == 10){
+    fanON();
+    incomingCommandByte = 0;
+    }
+    else if( incomingCommandByte == 11){
+    fanOFF();
+    incomingCommandByte = 0;
+    }
+    
 }
 }
 
+
+void fanON(){
+  analogWrite(PIN_fan, 100);
+  //turns ON the fan 
+}
+
+void fanOFF(){
+  analogWrite(PIN_fan, 0);
+  //turns OFF the fan
+}
+
+
  double getInternalTemperature(){
+  //method to get internal temperature
   //LM35C
   float tempc;
   float vout;
@@ -146,6 +171,7 @@ void loop() {
   }
   
  void getExternalTemperature(){
+  //method to get external temperature
   float tempOut;
     tempOut = analogRead(PIN_tempOut);
     tempOut = tempOut * 0.48828125;
@@ -157,6 +183,7 @@ void loop() {
  }
 
  void electricityConsumption(){
+  //method to calculate current electricity consumption
     float voltageOnA0;
     voltageOnA0 = analogRead(PIN_elCon) / 1023.0 * 1.1;
     Serial.println(voltageOnA0);
@@ -214,7 +241,6 @@ void loop() {
    digitalWrite(PIN_b, LOW);
    digitalWrite(PIN_c, HIGH);
    digitalWrite(PIN_d, LOW);
- 
    
   }
  
@@ -327,12 +353,14 @@ void timer2OFF(){
   }
 
   void houseBreakingAlarm(){
+  //method to turn on housebreaking alarm 
     digitalWrite(PIN_a ,HIGH);
     digitalWrite(PIN_b ,LOW);
     digitalWrite(PIN_c ,LOW);
     digitalWrite(PIN_d ,LOW);
     
      }
+     
 
   void smartHousePanel(){
     
