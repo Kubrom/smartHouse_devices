@@ -26,6 +26,7 @@ const int PIN_housebreaking_alarm = 3; //Housebreaking Alarm
 const int PIN_elCon = A0; // Electricity Consumption
 const int PIN_fan = 10; // Pin for turning on and off the fan
 const int PIN_ats = A3; // Automatic Twilight System
+const int PIN_powerCut = 7; // Power Cut
 
 const int PIN_tempIn = A1; // Indoor temperature pin.
 const int PIN_tempOut = PB1; // Outdoor temperature pin.
@@ -61,6 +62,8 @@ void timer2OFF();
 void fireAlarmON();
 void fireAlarmOFF();
 void automaticTwilightSystem();
+void getExternalTemperatureFahr();
+double getInternalTemperatureFahr();
 
 
 void setup() {
@@ -143,14 +146,25 @@ void loop() {
     fanOFF();
     incomingCommandByte = 0;
     }
+    else if( incomingCommandByte == 12){
+    getExternalTemperatureFahr();
+    incomingCommandByte = 0;
+    }
+    else if( incomingCommandByte == 13){
+    getInternalTemperatureFahr();
+    incomingCommandByte = 0;
+    }
 }
+}
+
+void powerCut(){
+  
 }
 
 
 void automaticTwilightSystem(){
+//turns on outdoorlight when it's dark outside  
 int ldrStatus = analogRead(PIN_ats);
-
-//turns on outdoorlight when it's dark outside
 if(ldrStatus <= 150){
   outdoorLightsON();
    Serial.println("LDR is dark and light is ON");
@@ -179,22 +193,48 @@ void fanOFF(){
   vout=analogRead(PIN_tempIn);
   vout=(vout*500)/1023;
   tempc=vout;
-  Serial.print("Indoor Temperature:" );
+  Serial.print("Indoor Temperature in Celsius: " );
   Serial.print(tempc);
   Serial.print("");
   delay(500); 
   }
-  
+
+double getInternalTemperatureFahr(){
+  float tempc;
+  float vout;
+  vout=analogRead(PIN_tempIn);
+  vout=(vout*500)/1023;
+  tempc=vout;
+  float tempInF = (tempc * 9) / 5 + 32;
+  Serial.print("Indoor Temperature in Fahrenheit: " );
+  Serial.print(tempInF);
+  Serial.print("");
+  delay(500); 
+}
+
  void getExternalTemperature(){
   //method to get external temperature
   float tempOut;
     tempOut = analogRead(PIN_tempOut);
     tempOut = tempOut * 0.48828125;
-    Serial.print("Outdoor Temperature:" );
+    Serial.print("Outdoor Temperature in Celsius: ");
     Serial.print(tempOut);
     Serial.print("*C");
     Serial.println();
     delay(1000);
+ }
+
+ void getExternalTemperatureFahr(){
+  float tempOut;
+    tempOut = analogRead(PIN_tempOut);
+    tempOut = tempOut * 0.48828125;
+  float tempOutF = (tempOut * 9) / 5 + 32;
+  Serial.print("Outdoor Temperature in Fahrenheit: ");
+    Serial.print(tempOutF);
+    Serial.print("*F");
+    Serial.println();
+    delay(1000);
+  
  }
 
  void electricityConsumption(){
@@ -256,12 +296,6 @@ void fanOFF(){
    digitalWrite(PIN_b, LOW);
    digitalWrite(PIN_c, HIGH);
    digitalWrite(PIN_d, LOW);
-<<<<<<< HEAD
-   sendResponseToServer();
-   
- 
-=======
->>>>>>> master
    
   }
  
@@ -403,9 +437,6 @@ void timer2OFF(){
   delay(100);
       } 
     }
-    int sendResponseToServer( ){
-        return incomingCommandByte;
-        }
 
     
   
