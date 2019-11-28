@@ -25,6 +25,7 @@ const int PIN_window = 6; // physical switch that trigger window.
 const int PIN_housebreaking_alarm = 3; //Housebreaking Alarm
 const int PIN_elCon = A0; // Electricity Consumption
 const int PIN_fan = 10; // Pin for turning on and off the fan
+const int PIN_ats = A3; // Automatic Twilight System
 
 const int PIN_tempIn = A1; // Indoor temperature pin.
 const int PIN_tempOut = PB1; // Outdoor temperature pin.
@@ -59,6 +60,7 @@ void timer2ON();
 void timer2OFF();
 void fireAlarmON();
 void fireAlarmOFF();
+void automaticTwilightSystem();
 
 
 void setup() {
@@ -77,7 +79,7 @@ void setup() {
    pinMode(PIN_housebreaking_alarm, INPUT);
    attachInterrupt(digitalPinToInterrupt(PIN_housebreaking_alarm), houseBreakingAlarm, LOW);
    pinMode(PIN_elCon, INPUT);
-   
+   pinMode(PIN_ats, INPUT);
    pinMode(PIN_fan, OUTPUT);   
    analogWrite(PIN_fan, 0);
 
@@ -89,6 +91,7 @@ void setup() {
 }
 
 void loop() {
+  automaticTwilightSystem();
   
   smartHousePanel(); //methods to control the switches at the smart house.
        
@@ -140,11 +143,23 @@ void loop() {
     fanOFF();
     incomingCommandByte = 0;
     }
-    
 }
 }
 
 
+void automaticTwilightSystem(){
+int ldrStatus = analogRead(PIN_ats);
+
+//turns on outdoorlight when it's dark outside
+if(ldrStatus <= 150){
+  outdoorLightsON();
+   Serial.println("LDR is dark and light is ON");
+} 
+else{
+  outdoorLightsOFF();
+}
+}
+ 
 void fanON(){
   analogWrite(PIN_fan, 100);
   //turns ON the fan 
