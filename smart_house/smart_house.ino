@@ -4,11 +4,13 @@
  * 2: indoor Lights OFF
  * 3: outdoor Lights ON
  * 4: outdoor Lights OFF
- * 5:
- * 6:
- * 7:
- * 8:
- * 9:
+ * 5: radiator ON
+ * 6: radiator OFF
+ * 7: internal temperature
+ * 8: external temperature
+ * 9: electricity consumption
+ * 10: fan ON
+ * 11: fan OFF
  */
 //list of all needed variables
 
@@ -20,13 +22,13 @@ const int PIN_water_leakage = 4; // physical switch that triggers water leakage.
 const int PIN_stove = 5; //physical switch that triggers stove.
 const int PIN_fire_alarm = 2; //physical switch that trigger fire alarm.
 const int PIN_window = 6; // physical switch that trigger window.
+const int PIN_housebreaking_alarm = 3; //Housebreaking Alarm
+const int PIN_elCon = A0; // Electricity Consumption
+const int PIN_fan = 10; // Pin for turning on and off the fan
+const int PIN_ats = A3; // Automatic Twilight System
 
-const int PIN_tempIn = A1;
-const int PIN_tempOut = A2;
-
-//float tempC;
-//float vout;
-
+const int PIN_tempIn = A1; // Indoor temperature pin.
+const int PIN_tempOut = PB1; // Outdoor temperature pin.
 
 unsigned int incomingCommandByte = 0; // for incoming serial data
 int waterLeakage_state; // used to read  waterLeakage switch values
@@ -37,7 +39,7 @@ int window_state; // used to read window switch values
 //list of all the prototypes of the functions created
 
 double getInternalTemperature();
-double getExternalTemperature();
+void getExternalTemperature();
 void sendWaterLeakageState();
 void smartHousePanel();
 void sendWindowState();
@@ -49,12 +51,16 @@ void outdoorLightsON();
 void outdoorLightsOFF();
 void radiatorON();
 void radiatorOFF();
+void fanON();
+void fanOFF();
+void electricityConsumption();
 void timer1ON();
 void timer1OFF();
 void timer2ON();
 void timer2OFF();
 void fireAlarmON();
 void fireAlarmOFF();
+void automaticTwilightSystem();
 
 
 void setup() {
@@ -70,6 +76,13 @@ void setup() {
    pinMode(PIN_window, INPUT);
    pinMode(PIN_tempIn, INPUT);
    pinMode(PIN_tempOut, INPUT);
+   pinMode(PIN_housebreaking_alarm, INPUT);
+   attachInterrupt(digitalPinToInterrupt(PIN_housebreaking_alarm), houseBreakingAlarm, LOW);
+   pinMode(PIN_elCon, INPUT);
+   pinMode(PIN_ats, INPUT);
+   pinMode(PIN_fan, OUTPUT);   
+   analogWrite(PIN_fan, 0);
+
    timer1OFF();
    timer2OFF();
    Serial.println("Welcome to the Smart house");
@@ -78,6 +91,7 @@ void setup() {
 }
 
 void loop() {
+  automaticTwilightSystem();
   
   smartHousePanel(); //methods to control the switches at the smart house.
        
@@ -118,33 +132,48 @@ void loop() {
     incomingCommandByte = 0;
     }
     else if( incomingCommandByte == 9){
-    tempTest();
+    electricityConsumption();
+    incomingCommandByte = 0;
+    }
+    else if( incomingCommandByte == 10){
+    fanON();
+    incomingCommandByte = 0;
+    }
+    else if( incomingCommandByte == 11){
+    fanOFF();
     incomingCommandByte = 0;
     }
 }
 }
 
+
+void automaticTwilightSystem(){
+int ldrStatus = analogRead(PIN_ats);
+
+//turns on outdoorlight when it's dark outside
+if(ldrStatus <= 150){
+  outdoorLightsON();
+   Serial.println("LDR is dark and light is ON");
+} 
+else{
+  outdoorLightsOFF();
+}
+}
+ 
+void fanON(){
+  analogWrite(PIN_fan, 100);
+  //turns ON the fan 
+}
+
+void fanOFF(){
+  analogWrite(PIN_fan, 0);
+  //turns OFF the fan
+}
+
+
  double getInternalTemperature(){
   //method to get internal temperature
-  float temp = analogRead(PIN_tempIn);    //Read the analog pin
-  temp = temp * 0.48828125;   // convert output (mv) to readable celcius
-  Serial.print("Indoor Temperature: ");
-  Serial.print(temp);
-  Serial.println("C");  //print the temperature status
-  delay(1000);
-  }
-  
- double getExternalTemperature(){
- // method to get external temperature 
- float temp = analogRead(PIN_tempOut);    //Read the analog pin
- temp = temp * 0.48828125;   // convert output (mv) to readable celcius
- Serial.print("Outdoor Temperature: ");
- Serial.print(temp);
- Serial.println("C");  //print the temperature status
- delay(1000);
- }
-
- float tempTest(){
+  //LM35C
   float tempc;
   float vout;
   vout=analogRead(PIN_tempIn);
@@ -154,8 +183,28 @@ void loop() {
   Serial.print(tempc);
   Serial.print("");
   delay(500); 
+  }
   
+ void getExternalTemperature(){
+  //method to get external temperature
+  float tempOut;
+    tempOut = analogRead(PIN_tempOut);
+    tempOut = tempOut * 0.48828125;
+    Serial.print("Outdoor Temperature:" );
+    Serial.print(tempOut);
+    Serial.print("*C");
+    Serial.println();
+    delay(1000);
  }
+
+ void electricityConsumption(){
+  //method to calculate current electricity consumption
+    float voltageOnA0;
+    voltageOnA0 = analogRead(PIN_elCon) / 1023.0 * 1.1;
+    Serial.println(voltageOnA0);
+    delay(1000);
+    
+  }
 
 
    void sendWaterLeakageState(){
@@ -207,9 +256,12 @@ void loop() {
    digitalWrite(PIN_b, LOW);
    digitalWrite(PIN_c, HIGH);
    digitalWrite(PIN_d, LOW);
+<<<<<<< HEAD
    sendResponseToServer();
    
  
+=======
+>>>>>>> master
    
   }
  
@@ -320,6 +372,16 @@ void timer2OFF(){
   digitalWrite(PIN_d ,LOW);
  
   }
+
+  void houseBreakingAlarm(){
+  //method to turn on housebreaking alarm 
+    digitalWrite(PIN_a ,HIGH);
+    digitalWrite(PIN_b ,LOW);
+    digitalWrite(PIN_c ,LOW);
+    digitalWrite(PIN_d ,LOW);
+    
+     }
+     
 
   void smartHousePanel(){
     
