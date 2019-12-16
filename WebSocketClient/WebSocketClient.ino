@@ -8,13 +8,18 @@
 #include <ESP8266WiFi.h>
 #include <WebSocketClient.h>
 
-char toArduino = 'o';
+String toArduinoTX  ;
+String fromArduinoRX ;
 
-const char* ssid     = "Guest";
-const char* password = "test1234";
-char path[] = "/echo";
-char path2[] = "/led1/1";
-char host[] = "demos.kaazing.com";
+String dataFromServer;
+String dataToServer;
+
+
+const char* ssid = "EE-Hub-j3Gg";
+const char* password = "ACRE-tag-rocky";
+
+char path[] = "/houseserver/sockets/arduino";
+char host[] = "194.47.41.79";
   
 WebSocketClient webSocketClient;
 
@@ -22,7 +27,8 @@ WebSocketClient webSocketClient;
 WiFiClient client;
 
 void setup() {
-  Serial.begin(9600);
+
+  Serial.begin(115200);
   delay(10);
 
   // We start by connecting to a WiFi network
@@ -45,11 +51,13 @@ void setup() {
   Serial.println(WiFi.localIP());
 
   delay(5000);
+ 
   
 
   // Connect to the websocket server
-  if (client.connect("demos.kaazing.com", 80)) {
-    Serial.println("Connected");
+  
+  if (client.connect("194.47.41.79", 5678)) {
+    Serial.println("Connected to smart house");
   } else {
     Serial.println("Connection failed.");
     while(1) {
@@ -73,45 +81,22 @@ void setup() {
 
 
 void loop() {
- /* String data;
-
+ 
   if (client.connected()) {
-    
-    webSocketClient.getData(data);
-    if (data.length() > 0) {
+ 
+    webSocketClient.sendData("Connection successful");
+    webSocketClient.getData(dataFromServer);
+    if (dataFromServer.length() > 0) {
+      
       Serial.print("Received data: ");
-      Serial.println(data);
-    }
+      Serial.println(dataFromServer);
+
+        if (Serial.available() > 0 ) {
+    fromArduinoRX     = Serial.readString();
+     webSocketClient.sendData(fromArduinoRX);
+     fromArduinoRX = "";
     
-    // capture the value of analog 1, send it along
-    pinMode(1, INPUT);
-    data = String(analogRead(1));
-    
-    webSocketClient.sendData(data);
-    
-  } else {
-    Serial.println("Client disconnected.");
-    while (1) {
-      // Hang on disconnect.
-    }
   }
-  
-  // wait to fully let the client disconnect
-  delay(3000);
-  */
-   String data;
-   
-  if (client.connected()) {
- 
-    webSocketClient.sendData("Hello");
-    Serial.println("o");
-   
-    //Serial.write(toArduino);
- 
-    webSocketClient.getData(data);
-    if (data.length() > 0) {
-      //Serial.print("Received data: ");
-      //Serial.println(data);
     }
  
   } else {
@@ -119,5 +104,7 @@ void loop() {
   }
  
   delay(3000);
+
+
   
 }

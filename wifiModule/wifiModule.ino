@@ -3,8 +3,8 @@
 #include <ESP8266HTTPClient.h>
 #include <ArduinoJson.h>
 
-const char* ssid = "Guest";
-const char* password = "test1234";
+const char* ssid = "EE-Hub-j3Gg";
+const char* password = "ACRE-tag-rocky";
 
 void setup() 
 {
