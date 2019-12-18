@@ -68,6 +68,7 @@ double getInternalTemperatureFahr();
 
 void setup() {
   // put your setup code here, to run once:
+<<<<<<< Updated upstream
   Serial.begin(9600);
    pinMode(PIN_a, OUTPUT);
    pinMode(PIN_b, OUTPUT);
@@ -91,6 +92,35 @@ void setup() {
    Serial.println("Welcome to the Smart house");
   
   
+=======
+  Serial.begin(115200);
+  //outputs
+  pinMode(PIN_a, OUTPUT);
+  pinMode(PIN_b, OUTPUT);
+  pinMode(PIN_c, OUTPUT);
+  pinMode(PIN_d, OUTPUT);
+  pinMode(PIN_fan, OUTPUT);
+  analogWrite(PIN_fan, 0);
+  //inputs
+  pinMode(PIN_water_leakage, INPUT);
+  pinMode(PIN_stove, INPUT);
+  pinMode(PIN_fire_alarm, INPUT);
+  pinMode(PIN_window, INPUT);
+  pinMode(PIN_tempIn, INPUT);
+  pinMode(PIN_tempOut, INPUT);
+  pinMode(PIN_housebreaking_alarm, INPUT);
+  pinMode(PIN_elCon, INPUT);
+  pinMode(PIN_ats, INPUT);
+  //intereputs
+  /*
+    attachInterrupt(digitalPinToInterrupt(PIN_housebreaking_alarm), houseBreakingAlarm, LOW);
+    timer1OFF();
+    timer2OFF();
+  */
+  
+  Serial.println("Welcome to the Smart house");
+
+>>>>>>> Stashed changes
 }
 
 void loop() {
@@ -428,6 +458,7 @@ void timer2OFF(){
   delay(100);
   window_state = digitalRead(PIN_window);
   delay(100);
+<<<<<<< Updated upstream
  if(stove_state == HIGH || waterLeakage_state == HIGH || fireAlarm_state == HIGH || window_state == HIGH) {
   timer2ON();
   delay(100);
@@ -440,3 +471,31 @@ void timer2OFF(){
 
     
   
+=======
+  if (stove_state == HIGH || waterLeakage_state == HIGH || fireAlarm_state == HIGH || window_state == HIGH) {
+    timer2ON();
+    delay(100);
+  }
+  if (stove_state == LOW && waterLeakage_state == LOW && fireAlarm_state == LOW && window_state == LOW) {
+    timer2OFF();
+    delay(100);
+  }
+}
+
+void powerCut() {
+  String old_something; 
+  String old_somethings;
+if (digitalRead(PIN_powerCut)== HIGH) {
+  String something = "Power on";
+  if (something != old_something) 
+  Serial.println(something);
+  old_something = something;
+}
+else if (digitalRead(PIN_powerCut) == LOW){
+  String somethings = "Power off";
+  if (somethings != old_somethings);
+  Serial.println (somethings); 
+  old_somethings = somethings;
+}
+}
+>>>>>>> Stashed changes
