@@ -86,6 +86,7 @@ void setup() {
    pinMode(PIN_ats, INPUT);
    pinMode(PIN_fan, OUTPUT);   
    analogWrite(PIN_fan, 0);
+   pinMode(PIN_powerCut,INPUT);
 
    timer1OFF();
    timer2OFF();
@@ -184,11 +185,23 @@ void loop() {
     getInternalTemperatureFahr();
     incomingCommandByte = 0;
     }
+    else if( incomingCommandByte == 14) {
+     powerCut();
+     incomingCommandByte = 0;
+    }
 }
 }
 
 void powerCut(){
-  
+
+digitalWrite(PIN_a, LOW);
+   digitalWrite(PIN_b, LOW);
+   digitalWrite(PIN_c, HIGH);
+   digitalWrite(PIN_d, LOW);
+
+analogRead(PIN_powerCut);// 
+int buttonState = 0;
+  Serial.print("Powercut");
 }
 
 
@@ -445,6 +458,8 @@ void timer2OFF(){
     digitalWrite(PIN_d ,LOW);
     
      }
+
+  
      
 
   void smartHousePanel(){
