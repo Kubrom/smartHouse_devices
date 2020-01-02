@@ -8,6 +8,7 @@
 #include <ESP8266WiFi.h>
 #include <WebSocketClient.h>
 
+
 String toArduinoTX  ;
 String fromArduinoRX ;
 
@@ -32,14 +33,14 @@ void setup() {
   delay(10);
 
   // We start by connecting to a WiFi network
-
+/*
   Serial.println();
   Serial.println();
   Serial.print("Connecting to ");
   Serial.println(ssid);
-  
+  */
   WiFi.begin(ssid, password);
-  
+ /* 
   while (WiFi.status() != WL_CONNECTED) {
     delay(500);
     Serial.print(".");
@@ -53,13 +54,13 @@ void setup() {
   delay(5000);
  
   
-
+*/
   // Connect to the websocket server
   
   if (client.connect("194.47.41.79", 5678)) {
-    Serial.println("Connected to smart house");
+    //Serial.println("Connected to smart house");
   } else {
-    Serial.println("Connection failed.");
+    //Serial.println("Connection failed.");
     while(1) {
       // Hang on failure
     }
@@ -69,9 +70,9 @@ void setup() {
   webSocketClient.path = path;
   webSocketClient.host = host;
   if (webSocketClient.handshake(client)) {
-    Serial.println("Handshake successful");
+    //Serial.println("Handshake successful");
   } else {
-    Serial.println("Handshake failed.");
+    //Serial.println("Handshake failed.");
     while(1) {
       // Hang on failure
     }  
@@ -81,7 +82,13 @@ void setup() {
 
 
 void loop() {
- 
+ if (Serial.available() > 0 ) {
+  
+    fromArduinoRX     = Serial.readString();
+    Serial.println(fromArduinoRX);
+    
+  }
+  /*
   if (client.connected()) {
  
     webSocketClient.sendData("Connection successful");
@@ -100,11 +107,11 @@ void loop() {
     }
  
   } else {
-    Serial.println("Client disconnected.");
+    //Serial.println("Client disconnected.");
   }
  
   delay(3000);
 
-
+*/
   
 }
