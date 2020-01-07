@@ -1,34 +1,42 @@
-#include <SoftwareSerial.h>
-SoftwareSerial s(0,1);
+#include<PinChangeInterrupt.h>
+
 
 //#include <ArduinoJson.h>
 
 /*
   Device id's  since in our case we have 1 house and 1 room  the initial 2 integers of the command protocol are 11
-  1101 indoorLight (to add 0 for OFF and 1 for ON)
-  1102 outDoorLigh (to add 0 for OFF and 1 for ON)
-  1103 radiator (to add 0 for OFF and 1 for ON)
-  1104 fan: (to add 0 for OFF and 1 for ON)
+  
+  1101 indoorLight (to add 0 for OFF and 1 for ON) --> a,b 
+  1102 outDoorLigh (to add 0 for OFF and 1 for ON) --> c,d
+  1103 radiator (to add 0 for OFF and 1 for ON) --> e,f
+  1104 fan: (to add 0 for OFF and 1 for ON) --> g,h
 
   get sensor value ( GET = 3 according to the protocol)
-  11053 internalTemp (to add 1 for celsius and 2 for fahrenheit) 
-  11063 ExternalTemp (to add 1 for celsius and 2 for fahrenheit)
-  11073 electricConsumption 
+  
+  11053 internalTemp (to add 1 for celsius and 2 for fahrenheit) --> i
+  11063 ExternalTemp (to add 1 for celsius and 2 for fahrenheit) -->j
+  11073 electricConsumption --> k
+  
   alarm
-  1108 fireAlarmState (to add 0 for OFF and 1 for ON)
-  1109 waterLeakageState (to add 0 for OFF and 1 for ON)
-  1110 houseBreakingAlarm (to add 0 for OFF and 1 for ON)
-  1111 window (to add 0 for OFF and 1 for ON)
-  1112 stove (to add 0 for OFF and 1 for ON)
-  1113 powercut (to add 0 for OFF and 1 for ON)
+ 
+  1108 fireAlarmState (to add 0 for OFF and 1 for ON) --> l,m
+  1109 waterLeakageState (to add 0 for OFF and 1 for ON)--> n,o
+  1110 houseBreakingAlarm (to add 0 for OFF and 1 for ON)--> p,q
+  1111 window (to add 0 for OFF and 1 for ON)--> r,s
+  1112 stove (to add 0 for OFF and 1 for ON)--> t,u
+  1113 powercut (to add 0 for OFF and 1 for ON)-->v,w
+  1114 twilight system -->x,y
 */
 
-int var;
+int var; // twilight system controller
+const unsigned   long timeInterval = 4000;
+unsigned long currentMillis;
+unsigned long previousMillis = 0;
 
 
 //variables needed for communicatiing with NodeMCU
 
-String fromNodemcu;
+String fromNodemcu ;
 String toNodemcu;
 
 
@@ -37,11 +45,13 @@ const int PIN_a = 12;
 const int PIN_b = 13;
 const int PIN_c = 11;
 const int PIN_d = 8;
+
 const int PIN_water_leakage = 4; // physical switch that triggers water leakage.
 const int PIN_stove = 5; //physical switch that triggers stove.
 const int PIN_fire_alarm = 2; //physical switch that trigger fire alarm.
 const int PIN_window = 6; // physical switch that trigger window.
 const int PIN_housebreaking_alarm = 3; //Housebreaking Alarm
+
 const int PIN_elCon = A0; // Electricity Consumption
 const int PIN_fan = 10; // Pin for turning on and off the fan
 const int PIN_ats = A3; // Automatic Twilight System
@@ -52,6 +62,7 @@ int waterLeakage_state; // used to read  waterLeakage switch values
 int stove_state; // used to read stove switch values
 int fireAlarm_state; // used to read fireAlarm switch values
 int window_state; // used to read window switch values
+int houseBreakingalarm_state; // used to read house breaking alarm state
 
 //list of all the prototypes of the functions created
 
@@ -80,7 +91,6 @@ void fireAlarmOFF();
 void automaticTwilightSystem();
 void getExternalTemperatureFahr();
 double getInternalTemperatureFahr();
-void smartHousePanel();
 void powerCut();
 void testLedOn();
 void testLedOff();
@@ -109,153 +119,166 @@ void setup() {
   pinMode(PIN_elCon, INPUT);
   pinMode(PIN_ats, INPUT);
   //intereputs
+//PIN_fire_alarm = 2;
+//PIN_housebreaking_alarm = 3; 
+//PIN_water_leakage = 4;
+//PIN_stove = 5;   
+//PIN_window = 6; 
+
+  attachInterrupt(digitalPinToInterrupt(PIN_fire_alarm),sendFireAlarmState,CHANGE);
+  attachInterrupt(digitalPinToInterrupt(PIN_housebreaking_alarm), sendHouseBreakingAlarmState, CHANGE);
+    
+  attachPCINT(digitalPinToPCINT( PIN_stove),sendWaterLeakageState,CHANGE);
+ attachPCINT(digitalPinToPCINT( PIN_window),sendWindowState,CHANGE);
+  attachPCINT(digitalPinToPCINT( PIN_water_leakage),sendWindowState,CHANGE);
+ 
   
-    attachInterrupt(digitalPinToInterrupt(PIN_housebreaking_alarm), houseBreakingAlarm, LOW);
-    timer1OFF();
-    timer2OFF();
-  
-  Serial.println("Welcome to the Smart house");
+  //Serial.println("welcome to the smart house");
+  Serial.flush();
 
 }
 
 void loop() {
-
-
-  automaticTwilightSystem();
-  smartHousePanel();
-
-  if (Serial.available() > 0 ) {
-    fromNodemcu    = Serial.readString();
-    Serial.println(fromNodemcu);
-  }
-
-  switch (fromNodemcu.toInt()) {
-
-    case 11011://indoor light on
+ 
+  if (Serial.available() > 0  ) {
+    fromNodemcu    = char(Serial.read());
+    //Serial.println(fromNodemcu);
+   
+    if(fromNodemcu == "A"){
       indoorLightsON();
-      fromNodemcu = "";
-      break;
-
-    case 11010://indoor light off
+      fromNodemcu="";
+      }
+    else if(fromNodemcu == "B"){
       indoorLightsOFF();
-      fromNodemcu = "";
-      break;
-
-    case 11021://outdoor ligth on
+      fromNodemcu="";}
+      
+    else if(fromNodemcu == "C"){
       outdoorLightsON();
-      fromNodemcu = "";
-      break;
-
-    case 11020://outdoor light off
+      fromNodemcu="";}
+      
+    else if(fromNodemcu == "D"){
       outdoorLightsOFF();
-      fromNodemcu = "";
-      break;
-
-    case 11031://indoor heater on
+      fromNodemcu="";}
+      
+    else if(fromNodemcu == "E"){
       radiatorON();
-      fromNodemcu = "";
-      break;
-
-    case 11030://indoor heater off
+      fromNodemcu="";}
+      
+    else if(fromNodemcu == "F"){
       radiatorOFF();
-      fromNodemcu = "";
-      break;
+      fromNodemcu="";}
       
-    case 11041:// turn smart house fan on
+    else if(fromNodemcu == "G"){
       fanON();
-      fromNodemcu = "";
-      break;
-
-    case 11040:// turn smart house fan off
-      fanOFF();
-      fromNodemcu = "";
-      break;
-
-    case 110531:// get the value of internal temperature in celsius
-      getInternalTemperature();
-      fromNodemcu = "";
+      fromNodemcu="";}
       
-      break;
+    else if(fromNodemcu == "H"){
+      fanOFF();
+      fromNodemcu="";}
+      
+      else if(fromNodemcu == "I"){
+        getInternalTemperature();
+      fromNodemcu="";}
+      
+        else if(fromNodemcu == "J"){
+          getExternalTemperature();
+      fromNodemcu="";}
+      
+        else if(fromNodemcu == "K"){
+           electricityConsumption();
+      fromNodemcu="";}
 
-    case 110532:// get internal temperature in fahrenheit
-      getInternalTemperatureFahr();
-      fromNodemcu = "";
-      break;
+       else if(fromNodemcu == "L"){
+           fromNodemcu="";}
 
-    case 110631://get the value of the external temperature in celsisus
-      getExternalTemperature();
-      fromNodemcu = "";
-      break;
+           else if(fromNodemcu == "M"){
+           fromNodemcu="";}
 
+           else if(fromNodemcu == "N"){
+           fromNodemcu="";}
+           
+           else if(fromNodemcu == "O"){
+           fromNodemcu="";}
 
-    case 110632:// get external temperature in fahrenheit
-      getExternalTemperatureFahr();
-      fromNodemcu = "";
-      break;
+           else if(fromNodemcu == "P"){
+           fromNodemcu="";}
 
-    case 11073:// get the total electric consumption
-      electricityConsumption();
-      fromNodemcu = "";
-      break;
+           else if(fromNodemcu == "Q"){
+           fromNodemcu="";}
 
-    case 14:// method for testing purposes
-      testLedOn();
-      fromNodemcu = "";
-      break;
+           else if(fromNodemcu == "R"){
+           fromNodemcu="";}
 
-    case 15:// method for testing purposes
-      testLedOff();
-      fromNodemcu = "";
-      break;
+           else if(fromNodemcu == "S"){
+           fromNodemcu="";}
 
+           else if(fromNodemcu == "T"){
+           fromNodemcu="";}
 
-  }
+           else if(fromNodemcu == "U"){
+           fromNodemcu="";}
+
+           else if(fromNodemcu == "V"){
+           fromNodemcu="";}
+
+            else if(fromNodemcu == "W"){
+           fromNodemcu="";}
+
+            else if(fromNodemcu == "X"){
+           fromNodemcu="";}
+
+            else if(fromNodemcu == "Y"){
+           fromNodemcu="";}
+
+            else if(fromNodemcu == "Z"){
+           fromNodemcu="";}
+     
+  
+   }
+    automaticTwilightSystem();
+    sendSensorsValueToServer();
+
 
 }
-
-
-void testLedOn() {
-  timer2ON();
-  Serial.println("led Test on");
-}
-
-void testLedOff() {
-  fireAlarmOFF();
-  Serial.println("led Test off");
-}
-
-
 
 
 void automaticTwilightSystem() {
   //turns on outdoorlight when it's dark outside
   int ldrStatus = analogRead(PIN_ats);
   if (ldrStatus > 150 && var == 1) {
-    outdoorLightsOFF();
-    Serial.println("light is OFF");
-    Serial.println(ldrStatus);
+     digitalWrite(PIN_a, HIGH);
+  digitalWrite(PIN_b, HIGH);
+  digitalWrite(PIN_c, HIGH);
+  digitalWrite(PIN_d, HIGH);
+Serial.println("11140");
+    //Serial.println("light is OFF");
+    //Serial.println(ldrStatus);
     var = 0;
-    Serial.println(var);
+    //Serial.println(var);
   }
-  else if (ldrStatus <= 150) {
-    outdoorLightsON();
-    Serial.println("LDR is dark and light is ON");
-    Serial.println(ldrStatus);
+  else if (ldrStatus <= 150 && var ==0) {
+      digitalWrite(PIN_a, LOW);
+  digitalWrite(PIN_b, HIGH);
+  digitalWrite(PIN_c, HIGH);
+  digitalWrite(PIN_d, HIGH);
+Serial.println("11141");
+    //Serial.println("LDR is dark and light is ON");
+    //Serial.println(ldrStatus);
     var = 1;
-    Serial.println(var);
+    //Serial.println(var);
   }
 }
 
 void fanON() {
   analogWrite(PIN_fan, 100);
-  Serial.println("11041");
+  Serial.write("\n11041");
 
   //turns ON the fan
 }
 
 void fanOFF() {
   analogWrite(PIN_fan, 0);
-  Serial.println("11040");
+  Serial.write("\n11040");
   //turns OFF the fan
 }
 
@@ -279,9 +302,9 @@ double getInternalTemperature() {
   {
     stringVal+=charVal[i];
   }
-  String response = "110531 = " + stringVal;
-  Serial.print(response);
-  delay(500);
+  String response = "11053" + stringVal;
+  Serial.println(response);
+ 
 }
 
 double getInternalTemperatureFahr() {
@@ -302,9 +325,9 @@ double getInternalTemperatureFahr() {
   {
     stringVal+=charVal[i];
   }
-  String response = "110532 = " + stringVal;
-  Serial.print(response);
-  delay(500);
+  String response = "et110532 = " + stringVal;
+  Serial.println(response);
+  
 }
 
 void getExternalTemperature() {
@@ -323,10 +346,9 @@ void getExternalTemperature() {
   {
     stringVal+=charVal[i];
   }
-  String response = "110631 = " + stringVal;
-  Serial.print(response);
+  String response = "C11063 = " + stringVal;
+  Serial.println(response);
 
-  delay(500);
 }
 
 void getExternalTemperatureFahr() {
@@ -345,9 +367,9 @@ void getExternalTemperatureFahr() {
   {
     stringVal+=charVal[i];
   }
-  String response = "110632 = " + stringVal;
-  Serial.print(response);
-  delay(1000);
+  String response = "110632" + stringVal;
+  Serial.println(response);
+  
 
 }
 
@@ -366,59 +388,63 @@ void electricityConsumption() {
   {
     stringVal+=charVal[i];
   }
-  String response = "11073 = " + stringVal;
-  Serial.print(response);
-  delay(1000);
+  String response = "ec11073" + stringVal;
+  Serial.println(response);
+  
 
 }
 
 
 void sendWaterLeakageState() {
+  waterLeakage_state = digitalRead(PIN_water_leakage);
   if (waterLeakage_state == HIGH) {
     //send message to server to tell there is water leakage
-  Serial.println("11091");
+  Serial.write("\n11091");
   }
   else if (waterLeakage_state == LOW) {
     ////send message to server to tell there is no  water leakage
-  Serial.println("11090");
+  Serial.write("\n11090");
   }
 }
 
 
 void sendWindowState() {
+    window_state = digitalRead(PIN_window);
   if (window_state == HIGH) {
     //send message to server to tell there is water leakage
-  Serial.println("11111");
+  Serial.write("\n11111");
   }
   else if (window_state == LOW) {
     ////send message to server to tell there is no  water leakage
-  Serial.println("11110");
+  Serial.write("\n11110");
   }
 }
 
 
 void sendStoveState() {
+  stove_state = digitalRead(PIN_stove);
   if (stove_state == HIGH) {
     //send message to server to tell there is water leakage
-  Serial.println("11121");
+  Serial.write("\n11121");
   }
   else if (stove_state == LOW) {
     ////send message to server to tell there is no  water leakage
-  Serial.println("11120");
+  Serial.write("\n11120");
   }
 }
 
 
 void sendFireAlarmState() {
+  fireAlarm_state= digitalRead(PIN_fire_alarm);
   if (fireAlarm_state == HIGH) {
 
     fireAlarmON();
-    delay(100);
+   
   }
   else if (fireAlarm_state == LOW) {
 
     fireAlarmOFF();
-    delay(100);
+   
   }
 }
 void indoorLightsON() {
@@ -428,7 +454,7 @@ void indoorLightsON() {
   digitalWrite(PIN_b, LOW);
   digitalWrite(PIN_c, HIGH);
   digitalWrite(PIN_d, LOW);
-  Serial.println("11011");
+  Serial.write("\n11011");
 
 }
 
@@ -439,7 +465,7 @@ void indoorLightsOFF() {
   digitalWrite(PIN_b, LOW);
   digitalWrite(PIN_c, HIGH);
   digitalWrite(PIN_d, LOW);
-Serial.println("11010");
+Serial.write("\n11010");
 
 }
 
@@ -451,7 +477,7 @@ void outdoorLightsON() {
   digitalWrite(PIN_b, HIGH);
   digitalWrite(PIN_c, HIGH);
   digitalWrite(PIN_d, HIGH);
-Serial.println("11021");
+Serial.write("\n11021");
 }
 
 void outdoorLightsOFF() {
@@ -461,7 +487,7 @@ void outdoorLightsOFF() {
   digitalWrite(PIN_b, HIGH);
   digitalWrite(PIN_c, HIGH);
   digitalWrite(PIN_d, HIGH);
-Serial.println("11020");
+Serial.write("\n11020");
 }
 
 void radiatorON() {
@@ -471,7 +497,7 @@ void radiatorON() {
   digitalWrite(PIN_b, HIGH);
   digitalWrite(PIN_c, LOW);
   digitalWrite(PIN_d, HIGH);
-Serial.println("11031");
+Serial.write("\n11031");
 }
 
 
@@ -482,7 +508,7 @@ void radiatorOFF() {
   digitalWrite(PIN_b, HIGH);
   digitalWrite(PIN_c, LOW);
   digitalWrite(PIN_d, HIGH);
-Serial.println("11030");
+Serial.write("\n11030");
 }
 
 void timer1ON() {
@@ -527,7 +553,7 @@ void fireAlarmON() {
   digitalWrite(PIN_b , LOW);
   digitalWrite(PIN_c , LOW);
   digitalWrite(PIN_d , LOW);
-Serial.println("11081");
+Serial.write("\n11081");
 }
 
 void fireAlarmOFF() {
@@ -537,44 +563,73 @@ void fireAlarmOFF() {
   digitalWrite(PIN_b , LOW);
   digitalWrite(PIN_c , LOW);
   digitalWrite(PIN_d , LOW);
-Serial.write("11080\n");
+Serial.write("\n11080");
 }
 
-void houseBreakingAlarm() {
+void sendHouseBreakingAlarmState() {
   //method to turn on housebreaking alarm
+  houseBreakingalarm_state = digitalRead(PIN_housebreaking_alarm);
+  if(houseBreakingalarm_state == LOW){
   digitalWrite(PIN_a , HIGH);
   digitalWrite(PIN_b , LOW);
   digitalWrite(PIN_c , LOW);
   digitalWrite(PIN_d , LOW);
-Serial.println("11101");
+Serial.write("\n11101");
+}
+
+ else if (houseBreakingalarm_state == HIGH){
+   digitalWrite(PIN_a , LOW);
+  digitalWrite(PIN_b , LOW);
+  digitalWrite(PIN_c , LOW);
+  digitalWrite(PIN_d , LOW);
+  Serial.write("\n11100");}
 }
 
 
 void smartHousePanel() {
-
-  waterLeakage_state = digitalRead(PIN_water_leakage);
-  delay(100);
-  stove_state = digitalRead(PIN_stove);
-  delay(100);
-  fireAlarm_state = digitalRead(PIN_fire_alarm);
-  sendFireAlarmState();
-  delay(100);
-  window_state = digitalRead(PIN_window);
-  delay(100);
+waterLeakage_state= digitalRead(PIN_water_leakage); 
+stove_state= digitalRead(PIN_stove);
+window_state = digitalRead(PIN_window);
+houseBreakingalarm_state= digitalRead(PIN_housebreaking_alarm); 
   if (stove_state == HIGH || waterLeakage_state == HIGH || fireAlarm_state == HIGH || window_state == HIGH) {
     timer2ON();
-    delay(100);
   }
   if (stove_state == LOW && waterLeakage_state == LOW && fireAlarm_state == LOW && window_state == LOW) {
     timer2OFF();
-    delay(100);
   }
 }
 
 void powerCut() {
-
+String old_something; 
+String old_somethings;
+if (digitalRead(PIN_powerCut)== HIGH) {
+  String something = "Power on";
+  if (something != old_something) 
+  Serial.write("\n11131");
+  old_something = something;
 }
+else if (digitalRead(PIN_powerCut) == LOW){
+  String somethings = "Power off";
+  if (somethings != old_somethings);
+  Serial.write("\n11130"); 
+  old_somethings = somethings;
 
-void initialize() {
+}}
+
+void sendSensorsValueToServer() {
+//  const  long timeInterval = 20000;
+//unsigned long urrentMillisc;
+//unsigned long previousMillis;
+
+currentMillis = millis();
+if((currentMillis -  previousMillis) > timeInterval){
+  previousMillis = currentMillis;
+  getExternalTemperature();
+  
+  }
+  
+  
+
+  
 
 }
