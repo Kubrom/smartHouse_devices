@@ -1,8 +1,5 @@
 #include<PinChangeInterrupt.h>
 
-
-//#include <ArduinoJson.h>
-
 /*
   Device id's  since in our case we have 1 house and 1 room  the initial 2 integers of the command protocol are 11
   
@@ -27,12 +24,24 @@
   1113 powercut (to add 0 for OFF and 1 for ON)-->v,w
   1114 twilight system -->x,y
 */
+//timer
+boolean b1 = false;
+boolean b2 = false;
+
+boolean lightController = false;
+
+boolean waterLeakage = false;
+
 
 int var; // twilight system controller
-const unsigned   long timeInterval = 4000;
+const unsigned   long timeInterval = 7000;
 unsigned long currentMillis;
 unsigned long previousMillis = 0;
 
+//Indoor temp
+float tempC;
+//Outdoor temp
+float tempOutC;
 
 //variables needed for communicatiing with NodeMCU
 
@@ -66,8 +75,8 @@ int houseBreakingalarm_state; // used to read house breaking alarm state
 
 //list of all the prototypes of the functions created
 
-double getInternalTemperature();
-void getExternalTemperature();
+String getInternalTemperature();
+String getExternalTemperature();
 void sendWaterLeakageState();
 void smartHousePanel();
 void sendWindowState();
@@ -81,7 +90,7 @@ void radiatorON();
 void radiatorOFF();
 void fanON();
 void fanOFF();
-void electricityConsumption();
+String electricityConsumption();
 void timer1ON();
 void timer1OFF();
 void timer2ON();
@@ -90,7 +99,7 @@ void fireAlarmON();
 void fireAlarmOFF();
 void automaticTwilightSystem();
 void getExternalTemperatureFahr();
-double getInternalTemperatureFahr();
+String getInternalTemperatureFahr();
 void powerCut();
 void testLedOn();
 void testLedOff();
@@ -125,17 +134,15 @@ void setup() {
 //PIN_stove = 5;   
 //PIN_window = 6; 
 
-  attachInterrupt(digitalPinToInterrupt(PIN_fire_alarm),sendFireAlarmState,CHANGE);
-  attachInterrupt(digitalPinToInterrupt(PIN_housebreaking_alarm), sendHouseBreakingAlarmState, CHANGE);
+ attachInterrupt(digitalPinToInterrupt(PIN_fire_alarm),sendFireAlarmState,CHANGE);
+ attachInterrupt(digitalPinToInterrupt(PIN_housebreaking_alarm), sendHouseBreakingAlarmState, CHANGE);
     
-  attachPCINT(digitalPinToPCINT( PIN_stove),sendWaterLeakageState,CHANGE);
- attachPCINT(digitalPinToPCINT( PIN_window),sendWindowState,CHANGE);
-  attachPCINT(digitalPinToPCINT( PIN_water_leakage),sendWindowState,CHANGE);
- 
-  
-  //Serial.println("welcome to the smart house");
-  Serial.flush();
-
+ attachPCINT(digitalPinToPCINT(PIN_stove),sendStoveState,CHANGE);
+ attachPCINT(digitalPinToPCINT(PIN_window),sendWindowState,CHANGE);
+ attachPCINT(digitalPinToPCINT(PIN_water_leakage),sendWaterLeakageState,CHANGE);
+ intilialize();
+ //Serial.println("welcome to the smart house");
+ Serial.flush();
 }
 
 void loop() {
@@ -143,7 +150,6 @@ void loop() {
   if (Serial.available() > 0  ) {
     fromNodemcu    = char(Serial.read());
     //Serial.println(fromNodemcu);
-   
     if(fromNodemcu == "A"){
       indoorLightsON();
       fromNodemcu="";
@@ -237,6 +243,7 @@ void loop() {
    }
     automaticTwilightSystem();
     sendSensorsValueToServer();
+  
 
 
 }
@@ -245,69 +252,68 @@ void loop() {
 void automaticTwilightSystem() {
   //turns on outdoorlight when it's dark outside
   int ldrStatus = analogRead(PIN_ats);
-  if (ldrStatus > 150 && var == 1) {
-     digitalWrite(PIN_a, HIGH);
-  digitalWrite(PIN_b, HIGH);
-  digitalWrite(PIN_c, HIGH);
-  digitalWrite(PIN_d, HIGH);
-Serial.println("11140");
-    //Serial.println("light is OFF");
-    //Serial.println(ldrStatus);
-    var = 0;
-    //Serial.println(var);
+  if (ldrStatus > 200 && var == 1) {
+
+    if (lightController == true) {
+          outdoorLightsOFF();
+          //Serial.println("light is OFF");
+          //Serial.println(ldrStatus);
+          var = 0;
+          lightController = false;
+          //Serial.println(var);
+    }
+
   }
-  else if (ldrStatus <= 150 && var ==0) {
-      digitalWrite(PIN_a, LOW);
-  digitalWrite(PIN_b, HIGH);
-  digitalWrite(PIN_c, HIGH);
-  digitalWrite(PIN_d, HIGH);
-Serial.println("11141");
-    //Serial.println("LDR is dark and light is ON");
-    //Serial.println(ldrStatus);
-    var = 1;
-    //Serial.println(var);
+  else if (ldrStatus <= 10 && var ==0) {
+
+      if (lightController == false) {
+          outdoorLightsON();
+          lightController = true;
+          //Serial.println("LDR is dark and light is ON");
+          //Serial.println(ldrStatus);
+          var = 1;
+          //Serial.println(var);
+      }
+         
   }
 }
 
 void fanON() {
   analogWrite(PIN_fan, 100);
-  Serial.write("\n11041");
+  Serial.println("11041");
 
   //turns ON the fan
 }
 
 void fanOFF() {
   analogWrite(PIN_fan, 0);
-  Serial.write("\n11040");
+  Serial.println("11040");
   //turns OFF the fan
 }
 
 
-double getInternalTemperature() {
+String getInternalTemperature() {
   //method to get internal temperature
   //LM35C
-  float tempc;
-  float vout;
-  vout = analogRead(PIN_tempIn);
-  vout = (vout * 500) / 1023;
-  tempc = vout;
+  tempC = analogRead(PIN_tempIn);
+  tempC = (tempC * 0.48828125); //if there is error change 5 value to 
   //tempc is a float value in order to be concatinated to the string response it must be
   //coverted into a string value. in arduino float to string conversion is not straightforward.
-  char charVal[10];               //temporarily holds data from vals 
+  char charVal[5];               //temporarily holds data from vals 
   String stringVal = "";     //data on buff is copied to this string
   
-  dtostrf(tempc, 4, 4, charVal);  //4 is mininum width, 4 is precision; float value is copied onto buff
+  dtostrf(tempC, 1, 1, charVal);  //4 is mininum width, 4 is precision; float value is copied onto buff
   //convert chararray to string
   for(int i=0;i<sizeof(charVal);i++)
   {
     stringVal+=charVal[i];
   }
   String response = "11053" + stringVal;
-  Serial.println(response);
+  return response;
  
 }
 
-double getInternalTemperatureFahr() {
+String getInternalTemperatureFahr() {
   float tempc;
   float vout;
   vout = analogRead(PIN_tempIn);
@@ -325,29 +331,29 @@ double getInternalTemperatureFahr() {
   {
     stringVal+=charVal[i];
   }
-  String response = "et110532 = " + stringVal;
-  Serial.println(response);
+  String response = "110532" + stringVal;
+  return response;
   
 }
 
-void getExternalTemperature() {
+String getExternalTemperature() {
   //method to get external temperature
-  float tempOut;
-  tempOut = analogRead(PIN_tempOut);
-  tempOut = tempOut * 0.48828125;
+  tempOutC = analogRead(PIN_tempOut);
+  tempOutC = (tempOutC * 0.48828125); //if there is error change 5 value to 0.48828125
     //tempOut is a float value in order to be concatinated to the string response it must be
   //coverted into a string value. in arduino float to string conversion is not straightforward.
-  char charVal[10];               //temporarily holds data from vals 
+  char charVal[5];               //temporarily holds data from vals 
   String stringVal = "";     //data on buff is copied to this string
   
-  dtostrf(tempOut, 4, 4, charVal);  //4 is mininum width, 4 is precision; float value is copied onto buff
+  dtostrf(tempOutC, 1, 1, charVal);  //4 is mininum width, 4 is precision; float value is copied onto buff
+  //5,2
   //convert chararray to string
   for(int i=0;i<sizeof(charVal);i++)
   {
     stringVal+=charVal[i];
   }
-  String response = "C11063 = " + stringVal;
-  Serial.println(response);
+  String response = "11063" + stringVal;
+  return response;
 
 }
 
@@ -373,23 +379,23 @@ void getExternalTemperatureFahr() {
 
 }
 
-void electricityConsumption() {
+String electricityConsumption() {
   //method to calculate current electricity consumption
   float voltageOnA0;
-  voltageOnA0 = analogRead(PIN_elCon) / 1023.0 * 1.1;
+  voltageOnA0 = (analogRead(PIN_elCon) / 1023.0 * 1.1) ;
     // voltageOnA0 is a float value in order to be concatinated to the string response it must be
   //coverted into a string value. in arduino float to string conversion is not straightforward.
-  char charVal[10];               //temporarily holds data from vals 
+  char charVal[5];               //temporarily holds data from vals 
   String stringVal = "";     //data on buff is copied to this string
   
-  dtostrf(voltageOnA0, 4, 4, charVal);  //4 is mininum width, 4 is precision; float value is copied onto buff
+  dtostrf(voltageOnA0, 1, 1, charVal);  //4 is mininum width, 4 is precision; float value is copied onto buff
   //convert chararray to string
   for(int i=0;i<sizeof(charVal);i++)
   {
     stringVal+=charVal[i];
   }
-  String response = "ec11073" + stringVal;
-  Serial.println(response);
+  String response = "11073" + stringVal;
+  return response;
   
 
 }
@@ -397,26 +403,29 @@ void electricityConsumption() {
 
 void sendWaterLeakageState() {
   waterLeakage_state = digitalRead(PIN_water_leakage);
-  if (waterLeakage_state == HIGH) {
+  if (waterLeakage_state == HIGH  ) {
     //send message to server to tell there is water leakage
-  Serial.write("\n11091");
+  Serial.println("11091");
+  
   }
-  else if (waterLeakage_state == LOW) {
+  else if (waterLeakage_state == LOW ) {
     ////send message to server to tell there is no  water leakage
-  Serial.write("\n11090");
+  Serial.println("11090");
+  
   }
 }
 
 
 void sendWindowState() {
-    window_state = digitalRead(PIN_window);
+  
+  window_state = digitalRead(PIN_window);
   if (window_state == HIGH) {
     //send message to server to tell there is water leakage
-  Serial.write("\n11111");
+  Serial.println("11111");
   }
   else if (window_state == LOW) {
-    ////send message to server to tell there is no  water leakage
-  Serial.write("\n11110");
+   //send message to server to tell there is no  water leakage
+  Serial.println("11110");
   }
 }
 
@@ -425,11 +434,11 @@ void sendStoveState() {
   stove_state = digitalRead(PIN_stove);
   if (stove_state == HIGH) {
     //send message to server to tell there is water leakage
-  Serial.write("\n11121");
+  Serial.println("11121");
   }
   else if (stove_state == LOW) {
     ////send message to server to tell there is no  water leakage
-  Serial.write("\n11120");
+  Serial.println("11120");
   }
 }
 
@@ -454,7 +463,7 @@ void indoorLightsON() {
   digitalWrite(PIN_b, LOW);
   digitalWrite(PIN_c, HIGH);
   digitalWrite(PIN_d, LOW);
-  Serial.write("\n11011");
+  Serial.println("11011");
 
 }
 
@@ -465,7 +474,7 @@ void indoorLightsOFF() {
   digitalWrite(PIN_b, LOW);
   digitalWrite(PIN_c, HIGH);
   digitalWrite(PIN_d, LOW);
-Serial.write("\n11010");
+Serial.println("11010");
 
 }
 
@@ -477,7 +486,7 @@ void outdoorLightsON() {
   digitalWrite(PIN_b, HIGH);
   digitalWrite(PIN_c, HIGH);
   digitalWrite(PIN_d, HIGH);
-Serial.write("\n11021");
+Serial.println("11021");
 }
 
 void outdoorLightsOFF() {
@@ -487,7 +496,7 @@ void outdoorLightsOFF() {
   digitalWrite(PIN_b, HIGH);
   digitalWrite(PIN_c, HIGH);
   digitalWrite(PIN_d, HIGH);
-Serial.write("\n11020");
+Serial.println("11020");
 }
 
 void radiatorON() {
@@ -497,7 +506,7 @@ void radiatorON() {
   digitalWrite(PIN_b, HIGH);
   digitalWrite(PIN_c, LOW);
   digitalWrite(PIN_d, HIGH);
-Serial.write("\n11031");
+Serial.println("11031");
 }
 
 
@@ -508,7 +517,7 @@ void radiatorOFF() {
   digitalWrite(PIN_b, HIGH);
   digitalWrite(PIN_c, LOW);
   digitalWrite(PIN_d, HIGH);
-Serial.write("\n11030");
+Serial.println("11030");
 }
 
 void timer1ON() {
@@ -553,7 +562,7 @@ void fireAlarmON() {
   digitalWrite(PIN_b , LOW);
   digitalWrite(PIN_c , LOW);
   digitalWrite(PIN_d , LOW);
-Serial.write("\n11081");
+Serial.println("11081");
 }
 
 void fireAlarmOFF() {
@@ -563,7 +572,7 @@ void fireAlarmOFF() {
   digitalWrite(PIN_b , LOW);
   digitalWrite(PIN_c , LOW);
   digitalWrite(PIN_d , LOW);
-Serial.write("\n11080");
+Serial.println("11080");
 }
 
 void sendHouseBreakingAlarmState() {
@@ -574,15 +583,15 @@ void sendHouseBreakingAlarmState() {
   digitalWrite(PIN_b , LOW);
   digitalWrite(PIN_c , LOW);
   digitalWrite(PIN_d , LOW);
-Serial.write("\n11101");
+Serial.println("11101");
 }
 
  else if (houseBreakingalarm_state == HIGH){
-   digitalWrite(PIN_a , LOW);
+  digitalWrite(PIN_a , LOW);
   digitalWrite(PIN_b , LOW);
   digitalWrite(PIN_c , LOW);
   digitalWrite(PIN_d , LOW);
-  Serial.write("\n11100");}
+  Serial.println("11100");}
 }
 
 
@@ -605,13 +614,13 @@ String old_somethings;
 if (digitalRead(PIN_powerCut)== HIGH) {
   String something = "Power on";
   if (something != old_something) 
-  Serial.write("\n11131");
+  Serial.println("11131");
   old_something = something;
 }
 else if (digitalRead(PIN_powerCut) == LOW){
   String somethings = "Power off";
   if (somethings != old_somethings);
-  Serial.write("\n11130"); 
+  Serial.println("11130"); 
   old_somethings = somethings;
 
 }}
@@ -621,15 +630,31 @@ void sendSensorsValueToServer() {
 //unsigned long urrentMillisc;
 //unsigned long previousMillis;
 
+
 currentMillis = millis();
-if((currentMillis -  previousMillis) > timeInterval){
+if((currentMillis -  previousMillis) > (timeInterval + 10000)){
   previousMillis = currentMillis;
-  getExternalTemperature();
-  
+
+  Serial.println(getInternalTemperature());
+  b1 = false;
+b2 = false;
   }
-  
-  
+  else if(((currentMillis -  previousMillis) > (timeInterval +5000))&& (b2 == false)){
+  //previousMillis = currentMillis;
+  Serial.println(getExternalTemperature());
+  b2 = true;
+  }
+  else if(((currentMillis -  previousMillis) > (timeInterval))&& (b1 == false)){
+  //previousMillis = currentMillis;
+   Serial.println(electricityConsumption());
+   b1 = true;
+}}
 
-  
 
-}
+void intilialize(){
+  
+   indoorLightsOFF();
+   outdoorLightsOFF();
+   radiatorOFF();
+   fanOFF();
+  }

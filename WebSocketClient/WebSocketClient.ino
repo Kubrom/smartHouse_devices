@@ -20,7 +20,7 @@ const char* ssid = "Kubi";
 const char* password = "Parmigiano";
 
 char path[] = "/HouseServer_war_exploded/sockets/arduino";
-char host[] = "ec2-13-48-28-82.eu-north-1.compute.amazonaws.com";
+char host[] = "ec2-13-53-175-23.eu-north-1.compute.amazonaws.com";
   
 WebSocketClient webSocketClient;
 
@@ -57,8 +57,9 @@ void setup() {
 
   // Connect to the websocket server
  
-  if (client.connect(host, 9475)) {
-    //Serial.println("Connected to the server");
+ if (client.connect(host, 9475)) {
+   
+    
   } else {
     Serial.println("Connection failed.");
     while(1) {
@@ -71,7 +72,7 @@ void setup() {
   webSocketClient.host = host;
   if (webSocketClient.handshake(client)) {
     //Serial.println("Handshake successful");
-    webSocketClient.sendData("Handshake successful");
+    //webSocketClient.sendData("Handshake successfull");
     Serial.write("\nD");
     Serial.write("\nC");
     
@@ -119,7 +120,7 @@ void loop() {
       Serial.write("\nG");
      dataFromServer="";}
 
-     else if(dataFromServer=="11041"){
+     else if(dataFromServer=="11040"){
       Serial.write("\nH");
      dataFromServer="";}
 
@@ -200,10 +201,10 @@ void loop() {
 
      if (Serial.available() > 0 ) {
      fromArduinoRX     = Serial.readString();
-     Serial.write("\n");
+    
      
      webSocketClient.sendData(fromArduinoRX);
-     Serial.print(fromArduinoRX );
+     Serial.println(fromArduinoRX );
      fromArduinoRX = "";
     
   }
