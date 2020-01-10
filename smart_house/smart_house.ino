@@ -65,8 +65,11 @@ const int PIN_elCon = A0; // Electricity Consumption
 const int PIN_fan = 10; // Pin for turning on and off the fan
 const int PIN_ats = A3; // Automatic Twilight System
 const int PIN_powerCut = 7; // Power Cut
+
 const int PIN_tempIn = A1; // Indoor temperature pin.
 const int PIN_tempOut = PB1; // Outdoor temperature pin.
+
+unsigned int incomingCommandByte = 0; // for incoming serial data
 int waterLeakage_state; // used to read  waterLeakage switch values
 int stove_state; // used to read stove switch values
 int fireAlarm_state; // used to read fireAlarm switch values
@@ -106,9 +109,34 @@ void testLedOff();
 
 void initialize(); // method that send the initial state of the smart house to the server in the fist communication
 
-
 void setup() {
   // put your setup code here, to run once:
+<<<<<<< Updated upstream
+  Serial.begin(9600);
+   pinMode(PIN_a, OUTPUT);
+   pinMode(PIN_b, OUTPUT);
+   pinMode(PIN_c, OUTPUT);
+   pinMode(PIN_d, OUTPUT);
+   pinMode(PIN_water_leakage, INPUT);
+   pinMode(PIN_stove, INPUT);
+   pinMode(PIN_fire_alarm, INPUT);
+   pinMode(PIN_window, INPUT);
+   pinMode(PIN_tempIn, INPUT);
+   pinMode(PIN_tempOut, INPUT);
+   pinMode(PIN_housebreaking_alarm, INPUT);
+   attachInterrupt(digitalPinToInterrupt(PIN_housebreaking_alarm), houseBreakingAlarm, LOW);
+   pinMode(PIN_elCon, INPUT);
+   pinMode(PIN_ats, INPUT);
+   pinMode(PIN_fan, OUTPUT);   
+   analogWrite(PIN_fan, 0);
+   pinMode(PIN_powerCut,INPUT);
+
+   timer1OFF();
+   timer2OFF();
+   Serial.println("Welcome to the Smart house");
+  
+  
+=======
   Serial.begin(115200);
   //outputs
   pinMode(PIN_a, OUTPUT);
@@ -285,7 +313,7 @@ void fanON() {
   //turns ON the fan
 }
 
-void fanOFF() {
+void fanOFF(){
   analogWrite(PIN_fan, 0);
   Serial.println("11040");
   //turns OFF the fan
@@ -316,9 +344,9 @@ String getInternalTemperature() {
 String getInternalTemperatureFahr() {
   float tempc;
   float vout;
-  vout = analogRead(PIN_tempIn);
-  vout = (vout * 500) / 1023;
-  tempc = vout;
+  vout=analogRead(PIN_tempIn);
+  vout=(vout*500)/1023;
+  tempc=vout;
   float tempInF = (tempc * 9) / 5 + 32;
   //tempInF is a float value in order to be concatinated to the string response it must be
   //coverted into a string value. in arduino float to string conversion is not straightforward.
@@ -357,10 +385,10 @@ String getExternalTemperature() {
 
 }
 
-void getExternalTemperatureFahr() {
+ void getExternalTemperatureFahr(){
   float tempOut;
-  tempOut = analogRead(PIN_tempOut);
-  tempOut = tempOut * 0.48828125;
+    tempOut = analogRead(PIN_tempOut);
+    tempOut = tempOut * 0.48828125;
   float tempOutF = (tempOut * 9) / 5 + 32;
   //tempOutF is a float value in order to be concatinated to the string response it must be
   //coverted into a string value. in arduino float to string conversion is not straightforward.
@@ -429,6 +457,15 @@ void sendWindowState() {
   }
 }
 
+      
+      void sendWindowState(){
+      if(window_state == HIGH){
+        //send message to server to tell there is water leakage
+        }
+        else if (window_state == LOW){
+          ////send message to server to tell there is no  water leakage
+          }
+      }
 
 void sendStoveState() {
   stove_state = digitalRead(PIN_stove);
@@ -442,6 +479,21 @@ void sendStoveState() {
   }
 }
 
+      
+      void sendFireAlarmState(){
+      if(fireAlarm_state == HIGH){
+        Serial.println("Fire alarm ON!");//send message to server to tell there is water leakage
+        fireAlarmON();
+        delay(100);
+        }
+        else if (fireAlarm_state == LOW){
+          Serial.println("Fire alarm OFF!");//send message to server to tell there is no  water leakage
+          fireAlarmOFF();
+          delay(100);
+          }
+      }
+ void indoorLightsON(){
+  //method to turn on  indoor light 0010
 
 void sendFireAlarmState() {
   fireAlarm_state= digitalRead(PIN_fire_alarm);
@@ -450,14 +502,13 @@ void sendFireAlarmState() {
     fireAlarmON();
    
   }
-  else if (fireAlarm_state == LOW) {
+ 
+ void indoorLightsOFF(){
+//method to turn off  indoor lights 1010
 
     fireAlarmOFF();
    
   }
-}
-void indoorLightsON() {
-  //method to turn on  indoor light 0010
 
   digitalWrite(PIN_a, LOW);
   digitalWrite(PIN_b, LOW);
@@ -491,6 +542,16 @@ Serial.println("11021");
 
 void outdoorLightsOFF() {
   //method to turn on outdoor lights 1111
+  
+   digitalWrite(PIN_a, HIGH);
+   digitalWrite(PIN_b, HIGH);
+   digitalWrite(PIN_c, HIGH);
+   digitalWrite(PIN_d, HIGH);
+ 
+  }
+  
+ void radiatorON(){
+//  method to turn on radiator 0101
 
   digitalWrite(PIN_a, HIGH);
   digitalWrite(PIN_b, HIGH);
@@ -522,41 +583,41 @@ Serial.println("11030");
 
 void timer1ON() {
   //method to turn on timer 2 0100
-  digitalWrite(PIN_a, LOW);
-  digitalWrite(PIN_b, HIGH);
-  digitalWrite(PIN_c, LOW);
-  digitalWrite(PIN_d, LOW);
-
+   digitalWrite(PIN_a, LOW);
+   digitalWrite(PIN_b, HIGH);
+   digitalWrite(PIN_c, LOW);
+   digitalWrite(PIN_d, LOW);
+  
 }
 
-void timer1OFF() {
+void timer1OFF(){
   //method to turn off the timer (2) 1100
-  digitalWrite(PIN_a, HIGH);
-  digitalWrite(PIN_b, HIGH);
-  digitalWrite(PIN_c, LOW);
-  digitalWrite(PIN_d, LOW);
-
+   digitalWrite(PIN_a, HIGH);
+   digitalWrite(PIN_b, HIGH);
+   digitalWrite(PIN_c, LOW);
+   digitalWrite(PIN_d, LOW);
+   
 }
 
-void timer2ON() {
+void timer2ON(){
   //method to turn on timer 2 0001
-  digitalWrite(PIN_a, LOW);
-  digitalWrite(PIN_b, LOW);
-  digitalWrite(PIN_c, LOW);
-  digitalWrite(PIN_d, HIGH);
-
+   digitalWrite(PIN_a, LOW);
+   digitalWrite(PIN_b, LOW);
+   digitalWrite(PIN_c, LOW);
+   digitalWrite(PIN_d, HIGH);
+  
 }
 
-void timer2OFF() {
+void timer2OFF(){
   //method to turn off the timer (2) 1001
-  digitalWrite(PIN_a, HIGH);
-  digitalWrite(PIN_b, LOW);
-  digitalWrite(PIN_c, LOW);
-  digitalWrite(PIN_d, HIGH);
-
+   digitalWrite(PIN_a, HIGH);
+   digitalWrite(PIN_b, LOW);
+   digitalWrite(PIN_c, LOW);
+   digitalWrite(PIN_d, HIGH);
+  
 }
 
-void fireAlarmON() {
+  void fireAlarmON(){
   //method to turn on fire alarm sound 1000
   digitalWrite(PIN_a , HIGH);
   digitalWrite(PIN_b , LOW);
@@ -567,6 +628,13 @@ Serial.println("11081");
 
 void fireAlarmOFF() {
   //method to turn off fire alarm sound 0000
+ 
+  digitalWrite(PIN_a ,LOW);
+  digitalWrite(PIN_b ,LOW);
+  digitalWrite(PIN_c ,LOW);
+  digitalWrite(PIN_d ,LOW);
+ 
+  }
 
   digitalWrite(PIN_a , LOW);
   digitalWrite(PIN_b , LOW);
